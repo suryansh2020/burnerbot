@@ -1,11 +1,11 @@
 "use strict";
-var builder = require("botbuilder");
-var botbuilder_azure = require("botbuilder-azure");
-const kbId = process.env.kbId;
+const builder = require("botbuilder");
+const botbuilder_azure = require("botbuilder-azure");
 const https = require('https');
 const querystring = require('querystring');
 
 var useEmulator = (process.env.NODE_ENV == 'development');
+useEmulator = true;
 
 var connector = useEmulator ? new builder.ChatConnector() : new botbuilder_azure.BotServiceConnector({
     appId: process.env['MicrosoftAppId'],
@@ -13,29 +13,38 @@ var connector = useEmulator ? new builder.ChatConnector() : new botbuilder_azure
     stateEndpoint: process.env['BotStateEndpoint'],
     openIdMetadata: process.env['BotOpenIdMetadata']
 });
+const kbId = '1f9546cac0b44a0a9b9832139ddc30c2'; // process.env.kbId;
+const qnamakerSubscriptionKey = '64ac1b5c620f4a4bafbec15192bf284a' //process.env.qnamakerSubscriptionKey;
 
 var bot = new builder.UniversalBot(connector);
 
 bot.dialog('/', function (session) {
-    const message = session.message.text;
-    const urlEncodedMessage = querystring.escape(message);
-    const path = `/KBService.svc/GetAnswer?kbId=${kbId}&question=${urlEncodedMessage}`;
 
-    const options = {
-        path: path,
-        host: 'qnaservice.cloudapp.net'
-    };
 
     session.sendTyping();
+
+    const question = session.message.text;
+    const postBody = JSON.stringify({ 'question': question });
+
+    const options = {
+        method: 'POST',
+        path: `/qnamaker/v1.0/knowledgebases/${kbId}/generateAnswer`,
+        host: 'westus.api.cognitive.microsoft.com',
+        headers: {
+            'Content-Length': Buffer.byteLength(postBody),
+            'Content-Type': 'application/json',
+            'Ocp-Apim-Subscription-Key': qnamakerSubscriptionKey
+        }
+    };
 
     const req = https.request(options, (res) => {
         let data = '';
         res.on('data', (chunk) => data += chunk);
         res.on('end', () => {
             let result = JSON.parse(data);
-            if(result.score > 50) {
-            session.endConversation(result.answer);
-            } else if(result.score > 0) {
+            if (result.score > 50) {
+                session.endConversation(result.answer);
+            } else if (result.score > 0) {
                 session.message(`I'm not completely sure if this is correct, but hopefully this will help...`)
                 session.endConversation(result.answer)
             } else {
@@ -43,6 +52,7 @@ bot.dialog('/', function (session) {
             }
         });
     });
+    req.write(postBody);
     req.end();
 });
 
