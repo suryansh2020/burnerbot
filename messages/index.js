@@ -2,7 +2,7 @@
 var builder = require("botbuilder");
 var botbuilder_azure = require("botbuilder-azure");
 const kbId = process.env.kbId;
-const http = require('https');
+const https = require('https');
 const querystring = require('querystring');
 
 var useEmulator = (process.env.NODE_ENV == 'development');
