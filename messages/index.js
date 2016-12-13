@@ -13,8 +13,8 @@ var connector = useEmulator ? new builder.ChatConnector() : new botbuilder_azure
     stateEndpoint: process.env['BotStateEndpoint'],
     openIdMetadata: process.env['BotOpenIdMetadata']
 });
-const kbId = '1f9546cac0b44a0a9b9832139ddc30c2'; // process.env.kbId;
-const qnamakerSubscriptionKey = '64ac1b5c620f4a4bafbec15192bf284a' //process.env.qnamakerSubscriptionKey;
+const kbId = process.env.kbId;
+const qnamakerSubscriptionKey = process.env.qnamakerSubscriptionKey;
 
 var bot = new builder.UniversalBot(connector);
 
